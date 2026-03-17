@@ -42,7 +42,7 @@ bar_graph() {
     local used=$1 total=$2 width=$CURRENT_LEN graph="" percent num_blocks
     if (( total == 0 )); then percent=0
     else percent=$(awk -v u="$used" -v t="$total" 'BEGIN { printf "%.2f", (u/t)*100 }'); fi
-    num_blocks=$(awk -v p="$percent" -v w="$width" 'BEGIN { printf "%d", (p/100)*w }')
+    num_blocks=$(awk -v p="$percent" -v w="$width" 'BEGIN { n=int((p/100)*w); if(n>w) n=w; printf "%d", n }')
     graph+="${FG_BAR}"
     for (( i=0; i<num_blocks; i++ )); do graph+="█"; done
     graph+="${FG_BAR_EMPTY}"
