@@ -121,6 +121,43 @@ PRINT_DIVIDER() {
     printf "\n"
 }
 
+_wrap_text() {
+    local text="$1" width="$2"
+    local lines=()
+    local line="" w
+    local words=()
+    if [ -n "$ZSH_VERSION" ]; then
+        words=(${=text})
+    else
+        local oldIFS="$IFS"
+        IFS=$' \t\n'
+        set -f
+        words=($text)
+        set +f
+        IFS="$oldIFS"
+    fi
+    for w in "${words[@]}"; do
+        if (( ${#w} > width )); then
+            [[ -n "$line" ]] && { lines+=("$line"); line=""; }
+            while (( ${#w} > width )); do
+                lines+=("${w:0:$width}")
+                w="${w:$width}"
+            done
+            line="$w"
+        elif [[ -z "$line" ]]; then
+            line="$w"
+        elif (( ${#line} + 1 + ${#w} <= width )); then
+            line+=" $w"
+        else
+            lines+=("$line")
+            line="$w"
+        fi
+    done
+    [[ -n "$line" ]] && lines+=("$line")
+    (( ${#lines[@]} == 0 )) && lines+=("")
+    printf '%s\n' "${lines[@]}"
+}
+
 PRINT_DATA() {
     local name="$1" data="$2"
     local nlen=${#name}
@@ -128,15 +165,43 @@ PRINT_DATA() {
         name=$(printf '%s' "$name" | cut -c 1-$((MAX_NAME_LEN-3)))...
     fi
     name=$(printf "%-${MAX_NAME_LEN}s" "$name")
+    local blank_name
+    blank_name=$(printf "%-${MAX_NAME_LEN}s" "")
     local stripped
     stripped=$(strip_ansi "$data")
     local vis=${#stripped}
-    if (( vis < CURRENT_LEN )); then
-        data="${data}$(printf "%$((CURRENT_LEN - vis))s" "")"
+
+    local -a render_lines
+    if (( vis > CURRENT_LEN )); then
+        while IFS= read -r wline; do
+            render_lines+=("$wline")
+        done < <(_wrap_text "$stripped" "$CURRENT_LEN")
+    else
+        render_lines+=("$data")
     fi
-    printf '%s' "${INDENT}${BG_WIN}${FG_FRAME}║ ${FG_LABEL}${name} ${FG_DIV}│${C_RESET}${BG_WIN} ${FG_TEXT}${data} ${FG_FRAME}║${C_RESET}"
-    _shadow_r
-    printf "\n"
+
+    local idx=0 line label_part pad_vis pad
+    for line in "${render_lines[@]}"; do
+        if (( idx == 0 && vis <= CURRENT_LEN )); then
+            pad_vis=$vis
+        else
+            pad_vis=${#line}
+        fi
+        if (( pad_vis < CURRENT_LEN )); then
+            pad=$(printf "%$((CURRENT_LEN - pad_vis))s" "")
+        else
+            pad=""
+        fi
+        if (( idx == 0 )); then
+            label_part="${FG_LABEL}${name}"
+        else
+            label_part="${FG_LABEL}${blank_name}"
+        fi
+        printf '%s' "${INDENT}${BG_WIN}${FG_FRAME}║ ${label_part} ${FG_DIV}│${C_RESET}${BG_WIN} ${FG_TEXT}${line}${pad} ${FG_FRAME}║${C_RESET}"
+        _shadow_r
+        printf "\n"
+        idx=$((idx + 1))
+    done
 }
 
 # OS
