@@ -19,7 +19,7 @@ The upstream project is a minimal system-info display for Debian/ZFS servers. Th
 
 ## Installation
 
-The report is a small native binary (`machine_report.swift`) — it draws in ~10 ms, versus ~800 ms for the original shell script, so it doesn't hold up new terminals.
+The report is a small native binary (`machine_report.swift`) — it draws in ~10 ms, versus ~870 ms for the original shell script, so it doesn't hold up new terminals.
 
 ```bash
 # 1. Build and install to ~/.local/bin (needs Xcode Command Line Tools for swiftc)
@@ -33,7 +33,7 @@ Open a new terminal window to see the report.
 
 Display resolution and shell version are slow to look up (a WindowServer round-trip and a fork), so they're cached in `~/.cache/machine-report/static` and refreshed in the background at most once a minute. Everything else is read live on every run.
 
-`machine_report.sh` is the original shell version, kept for machines without a Swift toolchain; it renders the same box (`source ~/.machine_report.sh`).
+`machine_report.sh` is the original shell version, kept for machines without a Swift toolchain; it renders the same box. To use it instead, `cp machine_report.sh ~/.machine_report.sh` and put `source ~/.machine_report.sh` in your rc file.
 
 ## Differences from upstream
 
@@ -49,11 +49,13 @@ Following the upstream philosophy — **edit the source directly** (`machine_rep
 - **Configuration** — title, demo mode flag
 - **Colors** — all CGA palette values as 24-bit ANSI escapes
 - **Layout** — column width limits, indent
+- **System queries** — helpers that read sysctl, Mach VM stats, `statfs`, IOKit, and Homebrew's install directories
+- **Slow-but-static values (cached)** — display resolution and shell version, plus the background cache refresh
 - **Data gathering** — one block per data category, all macOS-native
 - **Demo mode overrides** — fake values for each field
 - **Output** — the print order; rearrange, add, or remove rows here
 
-To port to a new machine, the only section that needs changing is **Data gathering** — the rendering code is platform-independent.
+The **Output** section is platform-independent. Everything above it — **System queries**, the cached values, and **Data gathering** — is macOS-specific and uses Apple frameworks (IOKit, CoreGraphics), so porting to another OS means rewriting those sections.
 
 ## Requirements
 
