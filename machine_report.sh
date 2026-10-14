@@ -1,8 +1,9 @@
 #!/bin/bash
 # TR-100 Machine Report — macOS Edition
-# Fork of usgraphics/usgc-machine-report. BSD-3-Clause.
+# Copyright © 2024, U.S. Graphics, LLC. BSD-3-Clause License.
+# macOS adaptation © 2026, Jaime Ortega.
 
-# Configuration
+# Basic configuration, change as needed
 report_title="MACHINE REPORT"
 DEMO_MODE=false
 
@@ -24,6 +25,7 @@ MAX_NAME_LEN=13
 MAX_DATA_LEN=32
 INDENT="  "
 
+# Utilities
 max_length() {
     local max_len=0 len
     for str in "$@"; do
@@ -126,6 +128,7 @@ _wrap_text() {
     local lines=()
     local line="" w
     local words=()
+    # zsh doesn't word-split unquoted variables
     if [ -n "$ZSH_VERSION" ]; then
         words=(${=text})
     else
@@ -160,6 +163,8 @@ _wrap_text() {
 
 PRINT_DATA() {
     local name="$1" data="$2"
+
+    # Pad name
     local nlen=${#name}
     if (( nlen > MAX_NAME_LEN )); then
         name=$(printf '%s' "$name" | cut -c 1-$((MAX_NAME_LEN-3)))...
@@ -171,6 +176,7 @@ PRINT_DATA() {
     stripped=$(strip_ansi "$data")
     local vis=${#stripped}
 
+    # Values wider than the column wrap onto extra rows
     local -a render_lines
     if (( vis > CURRENT_LEN )); then
         while IFS= read -r wline; do
@@ -236,7 +242,7 @@ page_size=$(vm_stat | head -1 | grep -o '[0-9]*')
 mem_pages_active=$(vm_stat | awk '/Pages active/ {gsub(/\./,"",$3); print $3}')
 mem_pages_wired=$(vm_stat | awk '/Pages wired/ {gsub(/\./,"",$4); print $4}')
 mem_pages_compressed=$(vm_stat | awk '/Pages occupied by compressor/ {gsub(/\./,"",$5); print $5}')
-mem_used_bytes=$(( (mem_pages_active + mem_pages_wired + mem_pages_compressed) * page_size ))
+mem_used_bytes=$(( (mem_pages_active + mem_pages_wired + mem_pages_compressed) * page_size )) # Active + wired + compressed
 mem_used_gb=$(awk -v u="$mem_used_bytes" 'BEGIN { printf "%.1f", u / (1024^3) }')
 mem_percent=$(awk -v u="$mem_used_bytes" -v t="$mem_total_bytes" 'BEGIN { printf "%.0f", (u/t)*100 }')
 
@@ -248,9 +254,10 @@ if [[ -n "$disk_total_bytes" && -n "$disk_used_bytes" ]]; then
     root_total_gb=$(awk -v t="$disk_total_bytes" 'BEGIN { printf "%.0f", t / (1024^3) }')
     root_used_gb=$(awk -v u="$disk_used_bytes" 'BEGIN { printf "%.0f", u / (1024^3) }')
     disk_percent=$(awk -v u="$disk_used_bytes" -v t="$disk_total_bytes" 'BEGIN { printf "%.0f", (u/t)*100 }')
-    root_used=$((disk_used_bytes / 1048576))
+    root_used=$((disk_used_bytes / 1048576)) # (To MiB units)
     root_total=$((disk_total_bytes / 1048576))
 else
+    # Thanks https://github.com/AnarchistHoneybun
     root_used=$(df -m / | awk 'NR==2 {print $3}')
     root_total=$(df -m / | awk 'NR==2 {print $2}')
     root_total_gb=$(awk -v t="$root_total" 'BEGIN { printf "%.0f", t / 1024 }')
@@ -332,6 +339,7 @@ if [[ "$DEMO_MODE" == true ]]; then
 fi
 
 # Set current length before graphs get calculated
+# All data strings must go here
 CURRENT_LEN=$(max_length              \
     "$report_title"                   \
     "$os_name"                        \

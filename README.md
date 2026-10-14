@@ -49,13 +49,16 @@ Following the upstream philosophy — **edit the source directly** (`machine_rep
 - **Configuration** — title, demo mode flag
 - **Colors** — all CGA palette values as 24-bit ANSI escapes
 - **Layout** — column width limits, indent
+- **Utilities** — box drawing, bar graphs, text wrapping
 - **System queries** — helpers that read sysctl, Mach VM stats, `statfs`, IOKit, and Homebrew's install directories
-- **Slow-but-static values (cached)** — display resolution and shell version, plus the background cache refresh
-- **Data gathering** — one block per data category, all macOS-native
+- **Cached values** — display resolution and shell version, refreshed in the background
+- **OS** through **Uptime** — one block per data category, all macOS-native
 - **Demo mode overrides** — fake values for each field
-- **Output** — the print order; rearrange, add, or remove rows here
+- **Machine Report** — the print order; rearrange, add, or remove rows here
 
-The **Output** section is platform-independent. Everything above it — **System queries**, the cached values, and **Data gathering** — is macOS-specific and uses Apple frameworks (IOKit, CoreGraphics), so porting to another OS means rewriting those sections.
+**Utilities** and **Machine Report** are platform-independent. **System queries**, **Cached values**, and the data blocks are macOS-specific and use Apple frameworks (IOKit, CoreGraphics), so porting to another OS means rewriting those sections.
+
+Out of respect for the [original script](https://github.com/usgraphics/usgc-machine-report/blob/master/machine_report.sh), both sources try to keep its spirit: the same section order, the same short, plain comments, and its credits.
 
 ## Requirements
 
